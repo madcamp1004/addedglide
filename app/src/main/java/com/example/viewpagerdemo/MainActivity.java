@@ -302,14 +302,15 @@ public class MainActivity extends AppCompatActivity
         if (requestCode == 1 && resultCode == RESULT_OK && data != null) {
             try {
                 Uri selectedImageUri = data.getData();
-                InputStream imageStream = null;
+                addNewUri(selectedImageUri);
+                //InputStream imageStream = null;
                 //get the path from the uri
-                final String path = getPathFromURI(selectedImageUri);
-                if(path!=null){
-                    File f = new File(path);
-                    selectedImageUri = Uri.fromFile(f);
-                    addNewUri(selectedImageUri);
-                }
+//                final String path = getPathFromURI(selectedImageUri);
+//                if(path!=null){
+//                    File f = new File(path);
+//                    selectedImageUri = Uri.fromFile(f);
+//                    addNewUri(selectedImageUri);
+//                }
 
 
             } catch (Exception e) {
