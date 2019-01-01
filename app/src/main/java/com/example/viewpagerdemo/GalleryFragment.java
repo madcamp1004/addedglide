@@ -33,10 +33,10 @@ public class GalleryFragment extends Fragment {
 
     public static GridView gridView;
     public static ImageAdapter imgAdapter;
-    FloatingActionButton fab1,fab2,fab3;
+    FloatingActionButton fab1,fab2,fab3,fab4;
     Animation fabOpen,fabClose,rotateForward,rotateBackward;
     boolean isOpen = false;
-
+    private int type;
     private OnFragmentInteractionListener mListener;
 
     public GalleryFragment() {
@@ -69,6 +69,7 @@ public class GalleryFragment extends Fragment {
         fab1 = (FloatingActionButton) fragView.findViewById(R.id.fab1);
         fab2 = (FloatingActionButton) fragView.findViewById(R.id.fab2);
         fab3 = (FloatingActionButton) fragView.findViewById(R.id.fab3);
+        fab4 = (FloatingActionButton) fragView.findViewById(R.id.fab4);
 
         fabOpen = AnimationUtils.loadAnimation(this.fragContext, R.anim.fab_open);
         fabClose = AnimationUtils.loadAnimation(this.fragContext, R.anim.fab_close);
@@ -88,7 +89,7 @@ public class GalleryFragment extends Fragment {
                 if(CameraUtils.checkPermissions(getActivity())){
                     ((MainActivity)getActivity()).captureImage();
                 } else{
-                    ((MainActivity)getActivity()).requestCameraPermission();
+                    ((MainActivity)getActivity()).requestCameraPermission(1);
                 }
                 isOpen = true;
                 animateFab();
@@ -103,10 +104,23 @@ public class GalleryFragment extends Fragment {
                 animateFab();
             }
         });
+        fab4.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view){
+                if (CameraUtils.checkPermissions(getActivity())) {
+                    ((MainActivity)getActivity()).captureVideo();
+                } else {
+                    ((MainActivity)getActivity()).requestCameraPermission(2);
+                }
+                isOpen = true;
+                animateFab();
+            }
+        });
 
         gridView = (GridView) fragView.findViewById(R.id.grid_view);
 
         imgAdapter = new ImageAdapter(fragContext);
+        imgAdapter.notifyDataSetChanged();
         gridView.invalidateViews();
         gridView.setAdapter(imgAdapter);
 
@@ -120,7 +134,7 @@ public class GalleryFragment extends Fragment {
                 Intent i = new Intent(fragContext, FullImageActivity.class);
                 //passing array index
                 i.putExtra("id", position);
-                i.putExtra("imageUri",ImageAdapter.imageList.get(position).toString());
+                i.putExtra("imgUri",ImageAdapter.imageList.get(position).toString());
                 startActivity(i);
             }
         });
@@ -135,15 +149,19 @@ public class GalleryFragment extends Fragment {
             fab1.startAnimation(rotateForward);
             fab2.startAnimation(fabClose);
             fab3.startAnimation(fabClose);
+            fab4.startAnimation(fabClose);
             fab2.setClickable(false);
             fab3.setClickable(false);
+            fab4.setClickable(false);
             isOpen = false;
         }else{
             fab1.startAnimation(rotateBackward);
             fab2.startAnimation(fabOpen);
             fab3.startAnimation(fabOpen);
+            fab4.startAnimation(fabOpen);
             fab2.setClickable(true);
             fab3.setClickable(true);
+            fab4.setClickable(true);
             isOpen = true;
         }
     }

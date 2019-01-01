@@ -35,8 +35,11 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.VideoView;
 
 import com.karumi.dexter.Dexter;
 import com.karumi.dexter.MultiplePermissionsReport;
@@ -45,6 +48,7 @@ import com.karumi.dexter.listener.PermissionRequest;
 import com.karumi.dexter.listener.multi.MultiplePermissionsListener;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -57,6 +61,9 @@ public class MainActivity extends AppCompatActivity
                     GalleryFragment.OnFragmentInteractionListener,
                  CardFragment.OnFragmentInteractionListener{
 
+    //selected image or video
+    public static Uri selUri;
+
     // FOR PERMISSION
 
     private static final int CONTACT_PERMISSION_REQCODE = 123;
@@ -67,17 +74,21 @@ public class MainActivity extends AppCompatActivity
     // Activity request codes
     private static final int CAMERA_CAPTURE_IMAGE_REQUEST_CODE = 100;
     private static final int CAMERA_CAPTURE_VIDEO_REQUEST_CODE = 200;
+    private static final int GALLERY_CAPTURE_REQUEST_CODE = 300;
+
+    public static final int MEDIA_TYPE_IMAGE = 1;
+    public static final int MEDIA_TYPE_VIDEO = 2;
 
     // key to store image path in savedInstance state
     public static final String KEY_IMAGE_STORAGE_PATH = "image_path";
-    // Bitmap sampling size
-    public static final int BITMAP_SAMPLE_SIZE = 1;
 
     // Gallery directory name to store the images or videos
     public static final String GALLERY_DIRECTORY_NAME = "Hello Camera";
 
     // Image and Video file extensions
     public static final String IMAGE_EXTENSION = "jpg";
+    public static final String VIDEO_EXTENSION = "mp4";
+
 
     private static String imageStoragePath;
 
@@ -94,19 +105,7 @@ public class MainActivity extends AppCompatActivity
 
     public static ArrayList<String> items;
     public static ArrayList<Map<String, String>> dataList;
-/*
-    public void addNewBitmap(Bitmap bitmap) {
-        ImageAdapter.imageList.add(0, bitmap);
-        String serializedBitmap = ObjectSerializer.BitMapToString(bitmap);
-        strImgSet.add(serializedBitmap);
 
-        Log.i("strimgset", String.valueOf(strImgSet.size()));
-
-        sharedPreferences.edit().clear().putStringSet("images", strImgSet).apply();
-
-        Log.i("strimgset","ADDED TO SHAREDPREF");
-    }
-*/
     public void addNewUri(Uri uri){
         ImageAdapter.imageList.add(0,uri);
         strImgSet.add(uri.toString());
@@ -209,7 +208,7 @@ public class MainActivity extends AppCompatActivity
 
     public void getPhoto() {
         Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-        startActivityForResult(intent, 1);
+        startActivityForResult(intent, GALLERY_CAPTURE_REQUEST_CODE);
     }
 
     /**
@@ -222,6 +221,8 @@ public class MainActivity extends AppCompatActivity
                 if (!TextUtils.isEmpty(imageStoragePath)) {
                     if (imageStoragePath.substring(imageStoragePath.lastIndexOf(".")).equals("." + IMAGE_EXTENSION)) {
                         previewCapturedImage();
+                    } else if(imageStoragePath.substring(imageStoragePath.lastIndexOf(".")).equals("."+VIDEO_EXTENSION)){
+                        previewVideo();
                     }
                 }
             }
@@ -229,9 +230,36 @@ public class MainActivity extends AppCompatActivity
     }
 
     /**
+     * Display image from gallery
+     */
+    private void previewCapturedImage() {
+        try {
+            //imgPreview.setVisibility(View.VISIBLE);
+            Uri uri =Uri.fromFile(new File(imageStoragePath));
+            addNewUri(uri);
+
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Display image from gallery
+     */
+    private void previewVideo() {
+        try {
+            //imgPreview.setVisibility(View.VISIBLE);
+            Uri uri =Uri.fromFile(new File(imageStoragePath));
+            addNewUri(uri);
+
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+        }
+    }
+    /**
      * requesting permissions using dexter library
      */
-    public void requestCameraPermission() {
+    public void requestCameraPermission(final int type) {
         Dexter.withActivity(this)
                 .withPermissions(Manifest.permission.CAMERA,
                         Manifest.permission.WRITE_EXTERNAL_STORAGE,
@@ -240,8 +268,12 @@ public class MainActivity extends AppCompatActivity
                     @Override
                     public void onPermissionsChecked(MultiplePermissionsReport report) {
                         if (report.areAllPermissionsGranted()) {
-                            // capture picture
-                            captureImage();
+                            if (type == MEDIA_TYPE_IMAGE) {
+                                // capture picture
+                                captureImage();
+                            } else {
+                                captureVideo();
+                            }
                         } else if (report.isAnyPermissionPermanentlyDenied()) {
                             showPermissionsAlert();
                         }
@@ -259,20 +291,33 @@ public class MainActivity extends AppCompatActivity
      */
     public void captureImage() {
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-
-        File file = CameraUtils.getOutputMediaFile();
+        File file = CameraUtils.getOutputMediaFile(MEDIA_TYPE_IMAGE);
         if (file != null) {
             imageStoragePath = file.getAbsolutePath();
         }
 
         Uri fileUri = CameraUtils.getOutputMediaFileUri(getApplicationContext(), file);
-
         intent.putExtra(MediaStore.EXTRA_OUTPUT, fileUri);
-
         // start the image capture Intent
         startActivityForResult(intent, CAMERA_CAPTURE_IMAGE_REQUEST_CODE);
     }
 
+    /**
+     * Launching camera app to record video
+     */
+    public void captureVideo() {
+        Intent intent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
+        File file = CameraUtils.getOutputMediaFile(MEDIA_TYPE_VIDEO);
+        if (file != null) {
+            imageStoragePath = file.getAbsolutePath();
+        }
+
+        Uri fileUri = CameraUtils.getOutputMediaFileUri(getApplicationContext(), file);
+        // set video quality
+        intent.putExtra(MediaStore.EXTRA_VIDEO_QUALITY, 1);
+        intent.putExtra(MediaStore.EXTRA_OUTPUT, fileUri); // set the image file
+        startActivityForResult(intent,CAMERA_CAPTURE_VIDEO_REQUEST_CODE);
+    }
     /**
      * Saving stored image path to saved instance state
      */
@@ -299,72 +344,60 @@ public class MainActivity extends AppCompatActivity
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        if (requestCode == 1 && resultCode == RESULT_OK && data != null) {
-            try {
-                Uri selectedImageUri = data.getData();
-                addNewUri(selectedImageUri);
-                //InputStream imageStream = null;
-                //get the path from the uri
-//                final String path = getPathFromURI(selectedImageUri);
-//                if(path!=null){
-//                    File f = new File(path);
-//                    selectedImageUri = Uri.fromFile(f);
-//                    addNewUri(selectedImageUri);
-//                }
+        if (requestCode == CAMERA_CAPTURE_IMAGE_REQUEST_CODE ){
+            if(resultCode == RESULT_OK) {
+                // Refreshing the gallery
+                CameraUtils.refreshGallery(getApplicationContext(), imageStoragePath);
+                // successfully captured the image
+                // display it in image view
+                previewCapturedImage();
+            }else if (resultCode == RESULT_CANCELED) {
+                // user cancelled Image capture
+                Toast.makeText(getApplicationContext(),
+                        "User cancelled image capture", Toast.LENGTH_SHORT)
+                        .show();
+            } else {
+                // failed to capture image
+                Toast.makeText(getApplicationContext(),
+                        "Sorry! Failed to capture image", Toast.LENGTH_SHORT)
+                        .show();
+            }
 
-
-            } catch (Exception e) {
-                e.printStackTrace();
+        } else if (requestCode == CAMERA_CAPTURE_VIDEO_REQUEST_CODE ){
+              if( resultCode == RESULT_OK) {
+                  Toast.makeText(getApplicationContext(),"complete recording",Toast.LENGTH_SHORT).show();
+               // Refreshing the gallery
+                  CameraUtils.refreshGallery(getApplicationContext(), imageStoragePath);
+                  previewVideo();
+              }
+              else if (resultCode == RESULT_CANCELED) {
+                  // user cancelled recording
+                  Toast.makeText(getApplicationContext(),
+                          "User cancelled video recording", Toast.LENGTH_SHORT)
+                          .show();
+              } else {
+                  // failed to record video
+                  Toast.makeText(getApplicationContext(),
+                          "Sorry! Failed to record video", Toast.LENGTH_SHORT)
+                          .show();
+              }
+        }
+        else if(requestCode == GALLERY_CAPTURE_REQUEST_CODE && resultCode == RESULT_OK ) {
+            if (data != null) {
+                try {
+                    Uri imageUri = data.getData();
+                    addNewUri(imageUri);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    Toast.makeText(this, "Something went wrong", Toast.LENGTH_SHORT).show();
+                }
+            } else {
+                Toast.makeText(this, "Yout haven't picked Image", Toast.LENGTH_SHORT).show();
             }
         }
-        else if (requestCode == CAMERA_CAPTURE_IMAGE_REQUEST_CODE && resultCode == RESULT_OK) {
-            // Refreshing the gallery
-            CameraUtils.refreshGallery(getApplicationContext(), imageStoragePath);
-
-            // successfully captured the image
-            // display it in image view
-            previewCapturedImage();
-
-        } else if (resultCode == RESULT_CANCELED) {
-            // user cancelled Image capture
-            Toast.makeText(getApplicationContext(),
-                    "User cancelled image capture", Toast.LENGTH_SHORT)
-                    .show();
-        } else {
-            // failed to capture image
-            Toast.makeText(getApplicationContext(),
-                    "ReqCode: " + requestCode + "ResCode: " + resultCode, Toast.LENGTH_SHORT)
-                    .show();
-        }
-
         GalleryFragment.imgAdapter.notifyDataSetChanged();
         GalleryFragment.gridView.invalidateViews();
         GalleryFragment.gridView.setAdapter(GalleryFragment.imgAdapter);
-    }
-
-    private String getPathFromURI(Uri selectedImageUri) {
-        String res = null;
-        String[] proj = {MediaStore.Images.Media.DATA};
-        Cursor cursor = getContentResolver().query(selectedImageUri,proj,null,null,null);
-        if(cursor.moveToFirst()){
-            int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
-            res = cursor.getString(column_index);
-        }
-        cursor.close();
-        return res;
-    }
-    /**
-     * Display image from gallery
-     */
-    private void previewCapturedImage() {
-        try {
-            //imgPreview.setVisibility(View.VISIBLE);
-            Uri uri =Uri.fromFile(new File(imageStoragePath));
-            addNewUri(uri);
-
-        } catch (NullPointerException e) {
-            e.printStackTrace();
-        }
     }
 
     /**

@@ -36,7 +36,8 @@ public class CameraUtils {
     }
     public static boolean checkPermissions(Context context){
         return ActivityCompat.checkSelfPermission(context,Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(context,Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
+                && ActivityCompat.checkSelfPermission(context,Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED;
     }
     /*Downsizing the bitmap to avoid OutOfMemory exceptions
      */
@@ -74,7 +75,7 @@ public class CameraUtils {
     /**
      * creates and returns the image file before opening the camera
      */
-    public static File getOutputMediaFile(){
+    public static File getOutputMediaFile(int type){
         //external sdcard location
         File mediaStorageDir = new File(
                 Environment
@@ -92,7 +93,16 @@ public class CameraUtils {
         //adds timestamp
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
         File mediaFile;
-        mediaFile = new File(mediaStorageDir.getPath() + File.separator + "IMG_"+timeStamp+"."+MainActivity.IMAGE_EXTENSION);
+        if (type == MainActivity.MEDIA_TYPE_IMAGE) {
+            mediaFile = new File(mediaStorageDir.getPath() + File.separator
+                    + "IMG_" + timeStamp + "." + MainActivity.IMAGE_EXTENSION);
+        } else if (type == MainActivity.MEDIA_TYPE_VIDEO) {
+            mediaFile = new File(mediaStorageDir.getPath() + File.separator
+                    + "VID_" + timeStamp + "." + MainActivity.VIDEO_EXTENSION);
+        } else {
+            return null;
+        }
+
         return mediaFile;
     }
 }

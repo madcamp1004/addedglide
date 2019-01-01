@@ -15,6 +15,7 @@ import android.widget.ImageView;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 
+import java.io.File;
 import java.util.ArrayList;
 
 public class ImageAdapter extends BaseAdapter {
@@ -49,37 +50,12 @@ public class ImageAdapter extends BaseAdapter {
     public View getView(int position, View convertView, ViewGroup parent){
 
         ImageView image;
-
         if (convertView == null){
             LayoutInflater mInflater = ( LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
             convertView = mInflater.inflate(R.layout.grid_item_view,null);
 
             image = (ImageView) convertView.findViewById(R.id.grid_item_image);
-            Glide.with(mContext).load(imageList.get(position)).apply(new RequestOptions().centerCrop()).into(image);
-//           LayoutInflater mInflater = ( LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-//           convertView = mInflater.inflate(R.layout.grid_item_view,null);
-
-//           image = (ImageView) convertView.findViewById(R.id.grid_item_image);
-//           image.setImageBitmap(imageList.get(position));
-//           Log.i("SET IMAGE BITMAP AS", String.valueOf(position));
-
-//           int h = mContext.getResources().getDisplayMetrics().densityDpi;
-//
-//           convertView.setLayoutParams(new GridView.LayoutParams(h,h));
-//           convertView.setTag(image);
-
-            // if it's not recycled, initialize some attributes
-         /*   image = new ImageView(mContext);
-            int h = mContext.getResources().getDisplayMetrics().densityDpi;
-            image.setLayoutParams(new ViewGroup.LayoutParams(h,h));
-
-            image.setScaleType(ImageView.ScaleType.CENTER_CROP);
-
-            // image.setPadding(8, 8, 8, 8);
-
-            image.setImageBitmap(imageList.get(position));
-            Log.i("SET IMAGE BITMAP AS", String.valueOf(position));
-*/
+            Glide.with(mContext).asBitmap().load(imageList.get(position)).apply(new RequestOptions().centerCrop()).into(image);
 
         }else{
             image = (ImageView) convertView;
